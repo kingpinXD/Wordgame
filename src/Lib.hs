@@ -11,6 +11,7 @@ module Lib
   , zipOverGrid
   , zipOverGridWith
   , og
+  , gridWithCoords
   ) where
 
 import           Data
@@ -24,14 +25,22 @@ data Cell =
 
 type Grid a = [[a]]
 
-outputGrid :: Grid Char -> IO ()
+outputGrid :: Grid Cell -> IO ()
 outputGrid grid = putStrLn $ formatGrid grid
+
+mapOverGrid :: (a -> b) -> Grid a -> Grid Bool
+mapOverGrid = (map . map)
 
 og :: Show a => [a] -> IO ()
 og = putStrLn . unlines . map show
 
-formatGrid :: Grid Char -> String
-formatGrid = unlines
+formatGrid :: Grid Cell -> String
+formatGrid cellgrid =
+  let charGrid = mapOverGrid cellToChar cellgrid
+   in unlines charGrid
+
+cellToChar :: Cell -> Char
+cellToChar (Cell _ c) = c
 
 diagonalize :: Grid Char -> Grid Char
 diagonalize = transpose . skewGrid
@@ -85,3 +94,6 @@ zipOverGrid = zipWith zip
 
 zipOverGridWith :: (a -> b -> c) -> Grid a -> Grid b -> Grid c
 zipOverGridWith = zipWith . zipWith
+
+gridWithCoords :: Grid Char -> Grid Cell
+gridWithCoords = zipOverGridWith Cell coords
