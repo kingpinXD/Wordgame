@@ -13,9 +13,9 @@ module Lib
   , og
   ) where
 
-import Data
-import Data.List (isInfixOf, transpose)
-import Data.Maybe (catMaybes)
+import           Data
+import           Data.List  (isInfixOf, transpose)
+import           Data.Maybe (catMaybes)
 
 data Cell =
   Cell (Integer, Integer)
@@ -59,7 +59,7 @@ skewGrid (x:xs) = x : skewGrid (map indent xs)
 findWord :: Grid Char -> String -> Maybe String
 findWord grid word =
   let lines = getLines grid
-      found = or $ map (findWordInLine word) lines
+      found = any (findWordInLine word) lines -- found = or $ map (findWordInLine word) lines
    in if found
         then Just word
         else Nothing
