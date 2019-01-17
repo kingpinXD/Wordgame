@@ -18,6 +18,7 @@ module Lib
 
 import           Data
 import           Data.List  (isInfixOf, transpose)
+import qualified Data.Map   as M
 import           Data.Maybe (catMaybes, listToMaybe)
 
 data Cell
