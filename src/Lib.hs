@@ -14,12 +14,18 @@ module Lib
   , gridWithCoords
   , findWordsChar
   , findWordsCoords
+  , makeGame
   ) where
 
 import           Data
 import           Data.List  (isInfixOf, transpose)
 import qualified Data.Map   as M
 import           Data.Maybe (catMaybes, listToMaybe)
+
+data Game = Game
+  { gameGrid  :: Grid Cell
+  , gameWords :: M.Map String (Maybe [Cell])
+  } deriving (Eq, Ord, Show)
 
 data Cell
   = Cell (Integer, Integer)
@@ -28,6 +34,27 @@ data Cell
   deriving (Eq, Ord, Show)
 
 type Grid a = [[a]]
+
+makeGame :: Grid Char -> [String] -> Game
+makeGame grid words =
+  let gamegrid = gridWithCoords grid
+      tuplify word = (word, Nothing)
+      wordtuple = map tuplify words
+      wordsdict = M.fromList wordtuple
+   in Game gamegrid wordsdict
+
+playGame :: Game -> String -> Game
+playGame game word =
+  let grid = gameGrid game
+      found = findWord grid word
+      newgame =
+        case found of
+          Nothing -> playGame game
+          Just cs ->
+            let dict = gameWords game
+                newDict = M.Insert word found dict
+             in Game grid newDict
+   in newgame
 
 outputGrid :: Grid Cell -> IO ()
 outputGrid grid = putStrLn $ formatGrid grid
