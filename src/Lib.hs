@@ -15,12 +15,21 @@ module Lib
   , findWordsChar
   , findWordsCoords
   , makeGame
+  , totalWords
+  , score
+  , formatGame
+  , playGame
+  , completed
+  , makeRandomGrid
+  , fillBlanks
   ) where
 
 import           Data
-import           Data.List  (isInfixOf, transpose)
-import qualified Data.Map   as M
-import           Data.Maybe (catMaybes, listToMaybe)
+import           Data.Char     (toLower)
+import           Data.List     (isInfixOf, transpose)
+import qualified Data.Map      as M
+import           Data.Maybe    (catMaybes, listToMaybe)
+import           System.Random
 
 data Game = Game
   { gameGrid  :: Grid Cell
@@ -35,6 +44,22 @@ data Cell
 
 type Grid a = [[a]]
 
+completed :: Game -> Bool
+completed game = score game == totalWords game
+
+makeRandomGrid :: RandomGen t => t -> Grid Char
+makeRandomGrid gen =
+  let (gen1, gen2) = split gen
+      row = randomRs ('A', 'Z') gen1
+   in row : makeRandomGrid gen2
+
+fillBlanks :: RandomGen t => t -> Grid Char -> Grid Char
+fillBlanks gen grid =
+  let randomGrid = makeRandomGrid gen
+      fill '_' r = r
+      fill c _   = c
+   in zipOverGridWith fill grid randomGrid
+
 makeGame :: Grid Char -> [String] -> Game
 makeGame grid words =
   let gamegrid = gridWithCoords grid
@@ -43,18 +68,43 @@ makeGame grid words =
       wordsdict = M.fromList wordtuple
    in Game gamegrid wordsdict
 
+formatGameGrid :: Game -> String
+formatGameGrid game =
+  let grid = gameGrid game
+      dict = gameWords game
+      cellSet = concat . catMaybes . M.elems $ dict
+      formatcell cell =
+        let charofcell = cellToChar cell
+         in if cell `elem` cellSet
+              then charofcell
+              else toLower charofcell
+      chargrid = mapOverGrid formatcell grid
+   in unlines chargrid
+
 playGame :: Game -> String -> Game
+playGame game word
+  | not $ M.member word (gameWords game) = game
 playGame game word =
   let grid = gameGrid game
       found = findWord grid word
-      newgame =
-        case found of
-          Nothing -> playGame game
-          Just cs ->
-            let dict = gameWords game
-                newDict = M.Insert word found dict
-             in Game grid newDict
-   in newgame
+   in case found of
+        Nothing -> game
+        Just cs ->
+          let dict = gameWords game
+              newDict = M.insert word found dict
+           in game {gameWords = newDict}
+
+formatGame :: Game -> String
+formatGame game =
+  let formatedgame = formatGameGrid game
+   in formatedgame ++
+      "\n\n" ++ (show $ score game) ++ "/" ++ (show $ totalWords game)
+
+totalWords :: Game -> Int
+totalWords game = length . M.keys $ gameWords game
+
+score :: Game -> Int
+score game = length . catMaybes . M.elems $ gameWords game
 
 outputGrid :: Grid Cell -> IO ()
 outputGrid grid = putStrLn $ formatGrid grid
